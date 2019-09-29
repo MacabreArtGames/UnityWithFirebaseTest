@@ -46,9 +46,10 @@ public class SavePerson : MonoBehaviour {
     static InvokePump invoke = new InvokePump();
     [Space]
     public GameObject leaderBoardPanel;
+    public string DB_url;
 
     private void Start() {
-        FirebaseApp.DefaultInstance.SetEditorDatabaseUrl("https://fir-testproject-6dc6e.firebaseio.com/");
+        FirebaseApp.DefaultInstance.SetEditorDatabaseUrl(DB_url);
         databaseReference = FirebaseDatabase.DefaultInstance.RootReference;
         
     }
