@@ -8,6 +8,9 @@ using Firebase.Storage;
 using Firebase.Database;
 using Firebase.Unity.Editor;
 using System.Threading.Tasks;
+using System;
+using UnityEngine.UI.Extensions;
+
 
 public class SavePerson : MonoBehaviour {
     FirebaseStorage firebaseStorage;
@@ -31,9 +34,23 @@ public class SavePerson : MonoBehaviour {
     DatabaseReference databaseReference;
     [Space]
     public GameObject ShowPanel;
+    [Space]
+    [Header("UI elements")]
+    public Dropdown dropdown;
+    public List<UserInfo> userInfos;
+    public List<Text> userDisplayTexts;
+    private bool IsFillLeaderList = false;
+
+    DataSnapshot dataSnapshot;
+
+    static InvokePump invoke = new InvokePump();
+    [Space]
+    public GameObject leaderBoardPanel;
+
     private void Start() {
         FirebaseApp.DefaultInstance.SetEditorDatabaseUrl("https://fir-testproject-6dc6e.firebaseio.com/");
         databaseReference = FirebaseDatabase.DefaultInstance.RootReference;
+        
     }
 
     public void SubmitUser() {
@@ -57,7 +74,7 @@ public class SavePerson : MonoBehaviour {
 
     void SaveUserToDB(UserInfo _userInfo) {
         string json = JsonUtility.ToJson(_userInfo);
-        int i = Random.Range(0, 1000000);
+        int i = UnityEngine.Random.Range(0, 1000000);
         string _i = i.ToString();
 
         databaseReference.Child("users").Child(_i).SetRawJsonValueAsync(json);
@@ -65,7 +82,7 @@ public class SavePerson : MonoBehaviour {
     }
 
     public void ShowUserFromDB() {
-       string _id = id_field.text;
+        string _id = id_field.text;
         if (_id.Length != 0) {
             FirebaseDatabase.DefaultInstance.GetReference("users").Child(_id).GetValueAsync().
                 ContinueWith(task => {
@@ -75,22 +92,18 @@ public class SavePerson : MonoBehaviour {
                     } else if (task.IsCompleted) {
                         DataSnapshot dataSnapshot = task.Result;
                         _showeduserinfo = new UserInfo();
-                        //_userinfo.name = dataSnapshot.Child("name").Value.ToString();
 
                         string json = dataSnapshot.GetRawJsonValue();
                         _showeduserinfo = JsonUtility.FromJson<UserInfo>(json);
-
+                        invoke.Invoke(() => ShowUserInfo(_showeduserinfo));
 
                     }
                 });
         }
-
     }
 
     private void Update() {
-        if (_showeduserinfo != null) {
-            ShowUserInfo(_showeduserinfo);
-        }
+        invoke.Update();
     }
 
     void ShowUserInfo(UserInfo __uinfo) {
@@ -110,7 +123,7 @@ public class SavePerson : MonoBehaviour {
         nation_field.text = "";
     }
 
-    public  void CloseShowPanel() {
+    public void CloseShowPanel() {
         name_field2.text = "";
         surname_field2.text = "";
         age_field2.text = "";
@@ -119,5 +132,61 @@ public class SavePerson : MonoBehaviour {
         ShowPanel.SetActive(false);
 
     }
+
+
+    private void FillListWithUserNames(List<UserInfo> _userInfos) {
+        for (int i = 0; i < _userInfos.Count; i++) {
+            userDisplayTexts[i].text = String.Format("{0} {1} {2}", _userInfos[i].age, userInfos[i].name, userInfos[i].surname);
+        }
+        IsFillLeaderList = false;
+    }
+
+
+    public void OrderUsersByParam(Int32 _i) {
+        string orderParam = "";
+        switch (_i) {
+            case 0:
+                orderParam = "age";
+                break;
+            case 1:
+                orderParam = "name";
+                break;
+            case 2:
+                orderParam = "surname";
+                break;
+            case 3:
+                orderParam = "education";
+                break;
+            case 4:
+                orderParam = "nation";
+                break;
+        }
+
+
+        FirebaseDatabase.DefaultInstance.GetReference("users").OrderByChild(orderParam).LimitToFirst(10).GetValueAsync().
+            ContinueWith(task => {
+                if (task.IsFaulted) {
+                    Debug.Log("Unsuccesful");
+                } else if (task.IsCompleted) {
+                    DataSnapshot dataSnapshot = task.Result;
+                    invoke.Invoke(() => Fill(dataSnapshot));
+                }
+            });
+    }
+
+    private void Fill(DataSnapshot _dataSnapshot) {
+        userInfos = new List<UserInfo>();
+        foreach (DataSnapshot _d in _dataSnapshot.Children) {
+            string _json = _d.GetRawJsonValue();
+            _showeduserinfo = new UserInfo();
+            _showeduserinfo = JsonUtility.FromJson<UserInfo>(_json);
+            userInfos.Add(_showeduserinfo);
+            FillListWithUserNames(userInfos);
+        }
+    }
+
+
+
+
 
 }
