@@ -29,7 +29,8 @@ public class SavePerson : MonoBehaviour {
     public InputField nation_field2;
 
     DatabaseReference databaseReference;
-
+    [Space]
+    public GameObject ShowPanel;
     private void Start() {
         FirebaseApp.DefaultInstance.SetEditorDatabaseUrl("https://fir-testproject-6dc6e.firebaseio.com/");
         databaseReference = FirebaseDatabase.DefaultInstance.RootReference;
@@ -60,8 +61,9 @@ public class SavePerson : MonoBehaviour {
         string _i = i.ToString();
 
         databaseReference.Child("users").Child(_i).SetRawJsonValueAsync(json);
+        ClearFields();
     }
-    
+
     public void ShowUserFromDB() {
        string _id = id_field.text;
         if (_id.Length != 0) {
@@ -99,4 +101,23 @@ public class SavePerson : MonoBehaviour {
         nation_field2.text = __uinfo.nation;
         _showeduserinfo = null;
     }
+
+    void ClearFields() {
+        name_field.text = "";
+        surname_field.text = "";
+        age_field.text = "";
+        education_field.text = "";
+        nation_field.text = "";
+    }
+
+    public  void CloseShowPanel() {
+        name_field2.text = "";
+        surname_field2.text = "";
+        age_field2.text = "";
+        education_field2.text = "";
+        nation_field2.text = "";
+        ShowPanel.SetActive(false);
+
+    }
+
 }
